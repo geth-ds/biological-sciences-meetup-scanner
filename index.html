@@ -5,84 +5,259 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Biological Sciences Meetup Scanner</title>
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 480px;
-      margin: 24px auto;
+      background: #f4f6f8;
+      margin: 0;
       padding: 16px;
-      text-align: center;
+      color: #18212b;
+    }
+    main {
+      max-width: 520px;
+      margin: auto;
+    }
+    .card {
+      background: white;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    h1 { font-size: 23px; }
+    select, input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 13px;
+      margin: 7px 0;
+      font-size: 16px;
+      border-radius: 9px;
+    }
+    select, input {
+      background: white;
+      border: 1px solid #cbd2da;
     }
     button {
-      padding: 14px 20px;
-      font-size: 16px;
-      margin: 8px;
+      border: 0;
+      background: #155e45;
+      color: white;
+      font-weight: bold;
     }
-    #reader {
-      width: 100%;
-      margin-top: 20px;
-    }
-    #status {
+    button:disabled { opacity: 0.5; }
+    #reader { width: 100%; }
+    #result {
+      background: #edf1f5;
+      padding: 14px;
+      border-radius: 9px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+    }
+    .muted {
+      color: #647181;
+      font-size: 13px;
     }
   </style>
 </head>
 <body>
-  <h2>Meetup QR Camera Test</h2>
-  <p>This test only checks whether your phone can scan a QR code.</p>
-  <button id="start">Start Camera</button>
-  <button id="stop" disabled>Stop Camera</button>
-  <div id="reader"></div>
-  <p id="status">Ready to test.</p>
+<main>
+  <h1>Biological Sciences Meetup</h1>
+  <p class="muted">Volunteer QR Scanner</p>
 
-  <script>
-    let scanner = null;
+  <section class="card">
+    <h2>Volunteer sign-in</h2>
+    <div id="googleSignIn"></div>
+    <p id="loginStatus">Please sign in with Google.</p>
+  </section>
 
-    const status = document.getElementById("status");
-    const startButton = document.getElementById("start");
-    const stopButton = document.getElementById("stop");
+  <section class="card">
+    <h2>Scan participant ticket</h2>
 
-    startButton.addEventListener("click", async () => {
-      startButton.disabled = true;
-      status.textContent = "Requesting camera permission…";
+    <select id="action">
+      <option value="ATTENDANCE">Entrance attendance</option>
+      <option value="MEAL">Meal collection</option>
+      <option value="DRINK">Beverage collection</option>
+    </select>
 
-      try {
-        scanner = new Html5Qrcode("reader");
+    <div id="reader"></div>
 
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 230, height: 230 } },
-          decodedText => {
-            status.textContent = "QR detected:\n" + decodedText;
-          },
-          () => {}
-        );
+    <button id="start" onclick="startScanner()" disabled>
+      Start Camera
+    </button>
 
-        stopButton.disabled = false;
-        status.textContent = "Camera running. Point it at any QR code.";
-      } catch (error) {
-        scanner = null;
-        status.textContent = "Camera error: " +
-          (error && error.message ? error.message : String(error));
-        startButton.disabled = false;
-      }
+    <button onclick="stopScanner()">
+      Stop Camera
+    </button>
+
+    <input id="manual"
+      placeholder="Enter ticket token manually">
+
+    <button onclick="submitManual()">
+      Verify Ticket
+    </button>
+
+    <div id="result" role="status" aria-live="polite">
+      Sign in to begin.
+    </div>
+  </section>
+</main>
+
+<script>
+  const GOOGLE_CLIENT_ID = "641763292567-2dn41uk6bass65nmtbm5l58ejdmfmrpa.apps.googleusercontent.com";
+  const WORKER_URL = "https://summer-tooth-9f31.geenidu.workers.dev";
+
+  let idToken = "";
+  let scanner = null;
+  let busy = false;
+  let lastToken = "";
+  let lastScanTime = 0;
+
+  function showResult(message) {
+    document.getElementById("result").textContent = message;
+  }
+
+  function handleCredential(response) {
+    idToken = response.credential;
+    document.getElementById("loginStatus").textContent =
+      "Google sign-in received. Ready to scan.";
+    document.getElementById("start").disabled = false;
+    showResult("Choose an action and start scanning.");
+  }
+
+  function initializeGoogle() {
+    if (!window.google || !google.accounts) {
+      setTimeout(initializeGoogle, 300);
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredential
     });
 
-    stopButton.addEventListener("click", async () => {
-      if (scanner) {
-        try {
-          await scanner.stop();
-          await scanner.clear();
-        } catch (error) {}
-        scanner = null;
+    google.accounts.id.renderButton(
+      document.getElementById("googleSignIn"),
+      {
+        theme: "outline",
+        size: "large"
       }
-      stopButton.disabled = true;
-      startButton.disabled = false;
-      status.textContent = "Camera stopped.";
-    });
-  </script>
+    );
+  }
+
+  initializeGoogle();
+
+  async function startScanner() {
+    if (!idToken) {
+      showResult("Sign in with Google first.");
+      return;
+    }
+
+    if (scanner) return;
+
+    try {
+      scanner = new Html5Qrcode("reader");
+
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 230, height: 230 }
+        },
+        decodedText => {
+          const now = Date.now();
+
+          if (busy ||
+              (decodedText === lastToken &&
+               now - lastScanTime < 3000)) {
+            return;
+          }
+
+          lastToken = decodedText;
+          lastScanTime = now;
+
+          processToken(decodedText);
+        },
+        () => {}
+      );
+
+      document.getElementById("start").disabled = true;
+      showResult("Camera ready. Scan a ticket.");
+
+    } catch (error) {
+      scanner = null;
+      document.getElementById("start").disabled = false;
+      showResult("Camera error: " + error.message);
+    }
+  }
+
+  async function stopScanner() {
+    if (!scanner) return;
+
+    const current = scanner;
+    scanner = null;
+
+    try {
+      await current.stop();
+      await current.clear();
+    } catch (error) {}
+
+    document.getElementById("start").disabled = false;
+  }
+
+  function submitManual() {
+    const token = document.getElementById("manual").value.trim();
+    if (token) processToken(token);
+  }
+
+  async function processToken(ticketToken) {
+    if (busy) return;
+
+    if (!idToken) {
+      showResult("Please sign in with Google.");
+      return;
+    }
+
+    busy = true;
+    showResult("Verifying ticket...");
+
+    try {
+      const response = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          idToken,
+          ticketToken,
+          action: document.getElementById("action").value
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.message || "Ticket rejected.");
+      }
+
+      showResult(
+        "SUCCESS\n" +
+        data.name +
+        "\nParticipant: " + data.participantID +
+        "\n" + data.message
+      );
+
+      document.getElementById("manual").value = "";
+
+    } catch (error) {
+      showResult("NOT RECORDED\n" + error.message);
+    } finally {
+      busy = false;
+    }
+  }
+</script>
 </body>
 </html>
+
 
