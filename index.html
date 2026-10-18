@@ -1,1 +1,88 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Biological Sciences Meetup Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 480px;
+      margin: 24px auto;
+      padding: 16px;
+      text-align: center;
+    }
+    button {
+      padding: 14px 20px;
+      font-size: 16px;
+      margin: 8px;
+    }
+    #reader {
+      width: 100%;
+      margin-top: 20px;
+    }
+    #status {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <h2>Meetup QR Camera Test</h2>
+  <p>This test only checks whether your phone can scan a QR code.</p>
+  <button id="start">Start Camera</button>
+  <button id="stop" disabled>Stop Camera</button>
+  <div id="reader"></div>
+  <p id="status">Ready to test.</p>
+
+  <script>
+    let scanner = null;
+
+    const status = document.getElementById("status");
+    const startButton = document.getElementById("start");
+    const stopButton = document.getElementById("stop");
+
+    startButton.addEventListener("click", async () => {
+      startButton.disabled = true;
+      status.textContent = "Requesting camera permission…";
+
+      try {
+        scanner = new Html5Qrcode("reader");
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 230, height: 230 } },
+          decodedText => {
+            status.textContent = "QR detected:\n" + decodedText;
+          },
+          () => {}
+        );
+
+        stopButton.disabled = false;
+        status.textContent = "Camera running. Point it at any QR code.";
+      } catch (error) {
+        scanner = null;
+        status.textContent = "Camera error: " +
+          (error && error.message ? error.message : String(error));
+        startButton.disabled = false;
+      }
+    });
+
+    stopButton.addEventListener("click", async () => {
+      if (scanner) {
+        try {
+          await scanner.stop();
+          await scanner.clear();
+        } catch (error) {}
+        scanner = null;
+      }
+      stopButton.disabled = true;
+      startButton.disabled = false;
+      status.textContent = "Camera stopped.";
+    });
+  </script>
+</body>
+</html>
+
