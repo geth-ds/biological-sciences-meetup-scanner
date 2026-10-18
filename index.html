@@ -5,64 +5,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Biological Sciences Meetup Scanner</title>
-
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 16px;
-      color: #18212b;
-    }
-    main {
-      max-width: 520px;
-      margin: auto;
-    }
-    .card {
-      background: white;
-      padding: 18px;
-      border-radius: 14px;
-      margin-bottom: 16px;
-    }
-    h1 { font-size: 23px; }
-    select, input, button {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 13px;
-      margin: 7px 0;
-      font-size: 16px;
-      border-radius: 9px;
-    }
-    select, input {
-      background: white;
-      border: 1px solid #cbd2da;
-    }
-    button {
-      border: 0;
-      background: #155e45;
-      color: white;
-      font-weight: bold;
-    }
-    button:disabled { opacity: 0.5; }
-    #reader { width: 100%; }
-    #result {
-      background: #edf1f5;
-      padding: 14px;
-      border-radius: 9px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-    .muted {
-      color: #647181;
-      font-size: 13px;
-    }
+    body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:16px; color:#18212b; }
+    main { max-width:520px; margin:auto; }
+    .card { background:white; padding:18px; border-radius:14px; margin-bottom:16px; }
+    h1 { font-size:23px; }
+    select,input,button { box-sizing:border-box; width:100%; padding:13px; margin:7px 0; font-size:16px; border-radius:9px; }
+    select,input { background:white; border:1px solid #cbd2da; }
+    button { border:0; background:#155e45; color:white; font-weight:bold; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:default; }
+    #reader { width:100%; }
+    #result { background:#edf1f5; padding:14px; border-radius:9px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .muted { color:#647181; font-size:13px; }
+    .stats-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
+    .stat-box { background:#edf3f0; padding:16px; border-radius:12px; font-size:14px; color:#334155; }
+    .stat-box strong { display:block; margin-top:10px; font-size:29px; color:#18212b; }
+    #stats-message { color:#475569; font-size:14px; overflow-wrap:anywhere; }
   </style>
 </head>
 <body>
-  <button onclick="testConnection()">Test Cloudflare Connection</button>
 <main>
   <h1>Biological Sciences Meetup</h1>
   <p class="muted">Volunteer QR Scanner</p>
@@ -75,67 +38,84 @@
 
   <section class="card">
     <h2>Scan participant ticket</h2>
-
     <select id="action">
       <option value="ATTENDANCE">Entrance attendance</option>
       <option value="MEAL">Meal collection</option>
       <option value="DRINK">Beverage collection</option>
     </select>
-
     <div id="reader"></div>
+    <button id="start" onclick="startScanner()" disabled>Start Camera</button>
+    <button onclick="stopScanner()">Stop Camera</button>
+    <input id="manual" placeholder="Enter ticket token manually" autocomplete="off">
+    <button onclick="submitManual()">Verify Ticket</button>
+    <div id="result" role="status" aria-live="polite">Sign in to begin.</div>
+  </section>
 
-    <button id="start" onclick="startScanner()" disabled>
-      Start Camera
-    </button>
-
-    <button onclick="stopScanner()">
-      Stop Camera
-    </button>
-
-    <input id="manual"
-      placeholder="Enter ticket token manually">
-
-    <button onclick="submitManual()">
-      Verify Ticket
-    </button>
-
-    <div id="result" role="status" aria-live="polite">
-      Sign in to begin.
+  <section class="card" id="event-dashboard">
+    <h2>Event Dashboard</h2>
+    <div class="stats-grid">
+      <div class="stat-box">Registered<strong id="stat-registered">—</strong></div>
+      <div class="stat-box">Valid tickets<strong id="stat-valid">—</strong></div>
+      <div class="stat-box">Attendance<strong id="stat-attendance">—</strong></div>
+      <div class="stat-box">Meals collected<strong id="stat-meals">—</strong></div>
+      <div class="stat-box">Drinks collected<strong id="stat-drinks">—</strong></div>
     </div>
+    <button id="refresh-stats" onclick="refreshStatistics()" disabled>Refresh Statistics</button>
+    <p id="stats-message" role="status" aria-live="polite">Sign in to view statistics.</p>
   </section>
 </main>
 
 <script>
   const GOOGLE_CLIENT_ID = "641763292567-2dn41uk6bass65nmtbm5l58ejdmfmrpa.apps.googleusercontent.com";
- const WORKER_URL = "https://summer-tooth-9f31.geenidud.workers.dev";
-  async function testConnection() {
-  try {
-    const response = await fetch(WORKER_URL, {
-      method: "GET"
-    });
-    const text = await response.text();
-    alert("HTTP " + response.status + "\n" + text);
-  } catch (error) {
-    alert("Connection failed: " + error.message);
-  }
-}
+  const WORKER_URL = "https://summer-tooth-9f31.geenidud.workers.dev";
+  const API_URL = WORKER_URL + "/health";
 
   let idToken = "";
   let scanner = null;
   let busy = false;
   let lastToken = "";
   let lastScanTime = 0;
+  let statsBusy = false;
 
   function showResult(message) {
     document.getElementById("result").textContent = message;
+  }
+
+  function setStatsMessage(message) {
+    document.getElementById("stats-message").textContent = message;
+  }
+
+  async function apiRequest(payload) {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ idToken, ...payload })
+    });
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("Server returned an invalid response.");
+    }
+
+    if (!response.ok || !data.ok) {
+      throw new Error(data.message || "Request failed.");
+    }
+
+    return data;
   }
 
   function handleCredential(response) {
     idToken = response.credential;
     document.getElementById("loginStatus").textContent =
       "Google sign-in received. Ready to scan.";
+
     document.getElementById("start").disabled = false;
+    document.getElementById("refresh-stats").disabled = false;
+
     showResult("Choose an action and start scanning.");
+    refreshStatistics();
   }
 
   function initializeGoogle() {
@@ -151,14 +131,62 @@
 
     google.accounts.id.renderButton(
       document.getElementById("googleSignIn"),
-      {
-        theme: "outline",
-        size: "large"
-      }
+      { theme: "outline", size: "large" }
     );
   }
 
   initializeGoogle();
+
+  async function refreshStatistics() {
+    if (!idToken) {
+      setStatsMessage("Sign in with Google first.");
+      return;
+    }
+
+    if (statsBusy) return;
+
+    statsBusy = true;
+    document.getElementById("refresh-stats").disabled = true;
+    setStatsMessage("Loading statistics...");
+
+    try {
+      const data = await apiRequest({
+        action: "STATS",
+        ticketToken: ""
+      });
+
+      if (!data.stats || typeof data.stats !== "object") {
+        throw new Error("Statistics data missing from server response.");
+      }
+
+      const stats = data.stats;
+      const fields = {
+        "stat-registered": stats.registered,
+        "stat-valid": stats.validTickets,
+        "stat-attendance": stats.attendance,
+        "stat-meals": stats.meals,
+        "stat-drinks": stats.drinks
+      };
+
+      for (const [id, value] of Object.entries(fields)) {
+        if (typeof value !== "number" || !Number.isFinite(value)) {
+          throw new Error("Incomplete statistics response.");
+        }
+
+        document.getElementById(id).textContent = value.toLocaleString();
+      }
+
+      setStatsMessage(
+        "Statistics updated at " + new Date().toLocaleTimeString() + "."
+      );
+
+    } catch (error) {
+      setStatsMessage("Could not load statistics: " + error.message);
+    } finally {
+      statsBusy = false;
+      document.getElementById("refresh-stats").disabled = !idToken;
+    }
+  }
 
   async function startScanner() {
     if (!idToken) {
@@ -180,15 +208,15 @@
         decodedText => {
           const now = Date.now();
 
-          if (busy ||
-              (decodedText === lastToken &&
-               now - lastScanTime < 3000)) {
+          if (
+            busy ||
+            (decodedText === lastToken && now - lastScanTime < 3000)
+          ) {
             return;
           }
 
           lastToken = decodedText;
           lastScanTime = now;
-
           processToken(decodedText);
         },
         () => {}
@@ -215,7 +243,7 @@
       await current.clear();
     } catch (error) {}
 
-    document.getElementById("start").disabled = false;
+    document.getElementById("start").disabled = !idToken;
   }
 
   function submitManual() {
@@ -235,23 +263,10 @@
     showResult("Verifying ticket...");
 
     try {
-     const response = await fetch(WORKER_URL + "/health", {
-  method: "POST",
-  headers: {
-    "Content-Type": "text/plain"
-  },
-  body: JSON.stringify({
-    idToken,
-    ticketToken,
-    action: document.getElementById("action").value
-  })
-});
-
-      const data = await response.json();
-
-      if (!response.ok || !data.ok) {
-        throw new Error(data.message || "Ticket rejected.");
-      }
+      const data = await apiRequest({
+        ticketToken,
+        action: document.getElementById("action").value
+      });
 
       showResult(
         "SUCCESS\n" +
@@ -261,6 +276,7 @@
       );
 
       document.getElementById("manual").value = "";
+      refreshStatistics();
 
     } catch (error) {
       showResult("NOT RECORDED\n" + error.message);
@@ -271,5 +287,4 @@
 </script>
 </body>
 </html>
-
 
