@@ -235,7 +235,7 @@
     showResult("Verifying ticket...");
 
     try {
-     const response = await fetch(WORKER_URL, {
+     const response = await fetch(WORKER_URL + "/health", {
   method: "POST",
   headers: {
     "Content-Type": "text/plain"
