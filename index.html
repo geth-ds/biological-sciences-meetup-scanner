@@ -223,17 +223,17 @@
     showResult("Verifying ticket...");
 
     try {
-      const response = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          idToken,
-          ticketToken,
-          action: document.getElementById("action").value
-        })
-      });
+     const response = await fetch(WORKER_URL, {
+  method: "POST",
+  headers: {
+    "Content-Type": "text/plain"
+  },
+  body: JSON.stringify({
+    idToken,
+    ticketToken,
+    action: document.getElementById("action").value
+  })
+});
 
       const data = await response.json();
 
