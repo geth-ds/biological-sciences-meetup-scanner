@@ -72,6 +72,7 @@
       border-radius: 9px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+      margin-top: 12px;
     }
 
     .muted {
@@ -79,7 +80,7 @@
       font-size: 13px;
     }
 
-    /* Food preference panel */
+    /* FOOD PREFERENCE PANEL */
 
     #food-panel {
       display: none;
@@ -97,13 +98,13 @@
     }
 
     #food-name {
-      font-size: 15px;
+      font-size: 17px;
       margin-bottom: 10px;
       overflow-wrap: anywhere;
     }
 
     #food-preference {
-      font-size: 29px;
+      font-size: 30px;
       font-weight: bold;
       color: #166534;
       overflow-wrap: anywhere;
@@ -124,7 +125,7 @@
       color: #991b1b;
     }
 
-    /* Dashboard */
+    /* EVENT DASHBOARD */
 
     .stats-grid {
       display: grid;
@@ -160,7 +161,9 @@
 <main>
 
   <h1>University of Sri Jayewardenepura</h1>
-  <p class="muted">Biological Sciences Meetup — Volunteer QR Scanner</p>
+  <p class="muted">
+    Biological Sciences Meetup — Volunteer QR Scanner
+  </p>
 
   <!-- GOOGLE SIGN-IN -->
 
@@ -174,7 +177,7 @@
     </p>
   </section>
 
-  <!-- QR SCANNER -->
+  <!-- SCANNER -->
 
   <section class="card">
 
@@ -198,8 +201,7 @@
 
     <div id="reader"></div>
 
-    <!-- FOOD PREFERENCE:
-         DIRECTLY BELOW THE CAMERA -->
+    <!-- FOOD PREFERENCE BELOW CAMERA -->
 
     <div id="food-panel" role="status" aria-live="polite">
       <h3>MEAL COLLECTION</h3>
@@ -238,7 +240,7 @@
 
   </section>
 
-  <!-- EVENT DASHBOARD -->
+  <!-- DASHBOARD -->
 
   <section class="card" id="event-dashboard">
 
@@ -290,6 +292,10 @@
 
 <script>
 
+  // =====================================
+  // CONFIGURATION
+  // =====================================
+
   const GOOGLE_CLIENT_ID =
     "641763292567-2dn41uk6bass65nmtbm5l58ejdmfmrpa.apps.googleusercontent.com";
 
@@ -301,39 +307,64 @@
   let idToken = "";
   let scanner = null;
   let busy = false;
-  let lastToken = "";
-  let lastScanTime = 0;
   let statsBusy = false;
 
+  // Remember successfully scanned QR codes
+  // separately for each action.
+  const successfulScans = new Set();
+
+  // Remember the last scan outcome so the
+  // same QR doesn't immediately overwrite it.
+  let lastAttemptKey = "";
+  let lastAttemptTime = 0;
+
+  // Suppress rapid repeated failed attempts.
+  const RETRY_DELAY_MS = 10000;
+
+  // =====================================
+  // DISPLAY HELPERS
+  // =====================================
+
   function showResult(message) {
-    document.getElementById("result").textContent = message;
+    document.getElementById("result").textContent =
+      message;
   }
 
   function setStatsMessage(message) {
-    document.getElementById("stats-message").textContent = message;
+    document.getElementById("stats-message").textContent =
+      message;
   }
 
-  // FOOD PREFERENCE DISPLAY
-
   function clearFoodPanel() {
-    const panel = document.getElementById("food-panel");
+    const panel =
+      document.getElementById("food-panel");
 
     panel.style.display = "none";
     panel.classList.remove("error");
 
     document.getElementById("food-name").textContent = "";
+
     document.getElementById("food-preference").textContent = "";
+
     document.getElementById("food-status").textContent = "";
   }
 
   function handleActionChange() {
     clearFoodPanel();
-    lastToken = "";
-    lastScanTime = 0;
+
+    lastAttemptKey = "";
+    lastAttemptTime = 0;
+
+    showResult("Ready to scan.");
   }
 
+  // =====================================
+  // FOOD PREFERENCE DISPLAY
+  // =====================================
+
   function showFoodPreference(data) {
-    const panel = document.getElementById("food-panel");
+    const panel =
+      document.getElementById("food-panel");
 
     panel.classList.remove("error");
 
@@ -355,7 +386,8 @@
   }
 
   function showMealError(message) {
-    const panel = document.getElementById("food-panel");
+    const panel =
+      document.getElementById("food-panel");
 
     panel.classList.add("error");
 
@@ -371,10 +403,11 @@
     panel.style.display = "block";
   }
 
+  // =====================================
   // API CONNECTION
+  // =====================================
 
   async function apiRequest(payload) {
-
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
@@ -405,10 +438,11 @@
     return data;
   }
 
+  // =====================================
   // GOOGLE SIGN-IN
+  // =====================================
 
   function handleCredential(response) {
-
     idToken = response.credential;
 
     document.getElementById("loginStatus").textContent =
@@ -428,7 +462,6 @@
   }
 
   function initializeGoogle() {
-
     if (!window.google || !google.accounts) {
       setTimeout(initializeGoogle, 300);
       return;
@@ -450,10 +483,11 @@
 
   initializeGoogle();
 
+  // =====================================
   // EVENT DASHBOARD
+  // =====================================
 
   async function refreshStatistics() {
-
     if (!idToken) {
       setStatsMessage(
         "Sign in with Google first."
@@ -467,12 +501,9 @@
 
     document.getElementById("refresh-stats").disabled = true;
 
-    setStatsMessage(
-      "Loading statistics..."
-    );
+    setStatsMessage("Loading statistics...");
 
     try {
-
       const data = await apiRequest({
         action: "STATS",
         ticketToken: ""
@@ -498,7 +529,6 @@
       };
 
       for (const [id, value] of Object.entries(fields)) {
-
         if (
           typeof value !== "number" ||
           !Number.isFinite(value)
@@ -519,14 +549,12 @@
       );
 
     } catch (error) {
-
       setStatsMessage(
         "Could not load statistics: " +
         error.message
       );
 
     } finally {
-
       statsBusy = false;
 
       document.getElementById("refresh-stats").disabled =
@@ -534,10 +562,11 @@
     }
   }
 
+  // =====================================
   // CAMERA SCANNER
+  // =====================================
 
   async function startScanner() {
-
     if (!idToken) {
       showResult(
         "Sign in with Google first."
@@ -548,7 +577,6 @@
     if (scanner) return;
 
     try {
-
       scanner = new Html5Qrcode("reader");
 
       await scanner.start(
@@ -562,25 +590,42 @@
             height: 230
           }
         },
+
         decodedText => {
+          const action =
+            document.getElementById("action").value;
+
+          const key = action + ":" + decodedText;
 
           const now = Date.now();
 
+          // Never reprocess a successful scan
+          // for the same action in this page session.
+          if (successfulScans.has(key)) {
+            return;
+          }
+
+          // Don't submit another scan while
+          // the previous request is running.
+          if (busy) {
+            return;
+          }
+
+          // Suppress rapid retries of the
+          // same failed QR code.
           if (
-            busy ||
-            (
-              decodedText === lastToken &&
-              now - lastScanTime < 3000
-            )
+            key === lastAttemptKey &&
+            now - lastAttemptTime < RETRY_DELAY_MS
           ) {
             return;
           }
 
-          lastToken = decodedText;
-          lastScanTime = now;
+          lastAttemptKey = key;
+          lastAttemptTime = now;
 
-          processToken(decodedText);
+          processToken(decodedText, action);
         },
+
         () => {}
       );
 
@@ -591,7 +636,6 @@
       );
 
     } catch (error) {
-
       scanner = null;
 
       document.getElementById("start").disabled = false;
@@ -603,7 +647,6 @@
   }
 
   async function stopScanner() {
-
     if (!scanner) return;
 
     const current = scanner;
@@ -618,22 +661,27 @@
       !idToken;
   }
 
-  // MANUAL TICKET ENTRY
+  // =====================================
+  // MANUAL TICKET VERIFICATION
+  // =====================================
 
   function submitManual() {
-
     const token =
       document.getElementById("manual").value.trim();
 
-    if (token) {
-      processToken(token);
-    }
+    if (!token) return;
+
+    const action =
+      document.getElementById("action").value;
+
+    processToken(token, action);
   }
 
-  // PROCESS SCANNED TICKET
+  // =====================================
+  // PROCESS TICKET
+  // =====================================
 
-  async function processToken(ticketToken) {
-
+  async function processToken(ticketToken, action) {
     if (busy) return;
 
     if (!idToken) {
@@ -643,11 +691,14 @@
       return;
     }
 
-    busy = true;
+    const key = action + ":" + ticketToken;
 
-    // Remember the action for this scan.
-    const selectedAction =
-      document.getElementById("action").value;
+    // Keep an earlier successful result visible.
+    if (successfulScans.has(key)) {
+      return;
+    }
+
+    busy = true;
 
     clearFoodPanel();
 
@@ -656,11 +707,14 @@
     );
 
     try {
-
       const data = await apiRequest({
         ticketToken,
-        action: selectedAction
+        action
       });
+
+      // Mark the scan successful so the
+      // same QR cannot overwrite the result.
+      successfulScans.add(key);
 
       showResult(
         "SUCCESS\n" +
@@ -671,8 +725,8 @@
         data.message
       );
 
-      // Show food preference only for meals.
-      if (selectedAction === "MEAL") {
+      // Only show food preference for meals.
+      if (action === "MEAL") {
         showFoodPreference(data);
       }
 
@@ -681,18 +735,16 @@
       refreshStatistics();
 
     } catch (error) {
-
       showResult(
         "NOT RECORDED\n" +
         error.message
       );
 
-      if (selectedAction === "MEAL") {
+      if (action === "MEAL") {
         showMealError(error.message);
       }
 
     } finally {
-
       busy = false;
     }
   }
