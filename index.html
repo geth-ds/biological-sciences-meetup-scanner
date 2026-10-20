@@ -2,910 +2,933 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Biological Sciences Meetup Scanner</title>
+<title>Biological Sciences Meetup Scanner</title>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+* {
+  box-sizing: border-box;
+}
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      color: #18212b;
-      margin: 0;
-      padding: 16px;
-    }
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  color: #18212b;
+  margin: 0;
+  padding: 16px;
+}
 
-    main {
-      max-width: 520px;
-      margin: auto;
-    }
+main {
+  max-width: 520px;
+  margin: auto;
+}
 
-    .card {
-      background: white;
-      padding: 18px;
-      border-radius: 16px;
-      margin-bottom: 16px;
-    }
+.card {
+  background: white;
+  padding: 18px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
 
-    h1 {
-      font-size: 23px;
-      margin-bottom: 8px;
-    }
+h1 {
+  font-size: 23px;
+  margin-bottom: 8px;
+}
 
-    h2 {
-      font-size: 20px;
-    }
+h2 {
+  font-size: 20px;
+}
 
-    .muted {
-      color: #647181;
-      font-size: 13px;
-    }
+.muted {
+  color: #647181;
+  font-size: 13px;
+}
 
-    select,
-    input,
-    button {
-      width: 100%;
-      padding: 13px;
-      margin: 7px 0;
-      font-size: 16px;
-      border-radius: 9px;
-    }
+select,
+input,
+button {
+  width: 100%;
+  padding: 13px;
+  margin: 7px 0;
+  font-size: 16px;
+  border-radius: 9px;
+}
 
-    select,
-    input {
-      background: white;
-      border: 1px solid #cbd2da;
-    }
+select,
+input {
+  background: white;
+  border: 1px solid #cbd2da;
+}
 
-    button {
-      border: 0;
-      background: #155e45;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
+button {
+  border: 0;
+  background: #155e45;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
-    #reader {
-      width: 100%;
-      overflow: hidden;
-    }
+#reader {
+  width: 100%;
+  overflow: hidden;
+}
 
-    /* LARGE RESULT PANEL */
+/* LARGE RESULT PANEL */
 
-    #scan-panel {
-      display: none;
-      margin: 14px 0;
-      padding: 22px 14px;
-      border-radius: 16px;
-      border: 3px solid #15803d;
-      background: #edf7ee;
-      text-align: center;
-    }
+#scan-panel {
+  display: none;
+  margin: 14px 0;
+  padding: 22px 14px;
+  border-radius: 16px;
+  border: 3px solid #15803d;
+  background: #edf7ee;
+  text-align: center;
+}
 
-    #scan-panel.error {
-      background: #fff1f2;
-      border-color: #dc2626;
-    }
+#scan-panel.error {
+  background: #fff1f2;
+  border-color: #dc2626;
+}
 
-    #scan-panel-title {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 12px;
-    }
+#scan-panel-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
 
-    #scan-panel-symbol {
-      font-size: 44px;
-      font-weight: bold;
-      color: #15803d;
-      margin-bottom: 8px;
-    }
+#scan-panel-symbol {
+  font-size: 44px;
+  font-weight: bold;
+  color: #15803d;
+  margin-bottom: 8px;
+}
 
-    #scan-panel.error #scan-panel-symbol {
-      color: #dc2626;
-    }
+#scan-panel.error #scan-panel-symbol {
+  color: #dc2626;
+}
 
-    #scan-panel-main {
-      font-size: 30px;
-      line-height: 1.2;
-      font-weight: 800;
-      color: #166534;
-      overflow-wrap: anywhere;
-      margin: 10px 0;
-    }
+#scan-panel-main {
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #166534;
+  overflow-wrap: anywhere;
+  margin: 10px 0;
+}
 
-    #scan-panel.error #scan-panel-main {
-      color: #991b1b;
-    }
+#scan-panel.error #scan-panel-main {
+  color: #991b1b;
+}
 
-    #scan-panel-name {
-      font-size: 19px;
-      font-weight: bold;
-      overflow-wrap: anywhere;
-      margin-top: 12px;
-    }
+#scan-panel-name {
+  font-size: 19px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+}
 
-    #scan-panel-id {
-      font-size: 15px;
-      color: #475569;
-      margin-top: 6px;
-    }
+#scan-panel-id {
+  font-size: 15px;
+  color: #475569;
+  margin-top: 6px;
+}
 
-    #scan-panel-status {
-      font-size: 15px;
-      font-weight: bold;
-      margin-top: 14px;
-      overflow-wrap: anywhere;
-    }
+#scan-panel-status {
+  font-size: 15px;
+  font-weight: bold;
+  margin-top: 14px;
+  overflow-wrap: anywhere;
+}
 
-    /* SMALL RESULT LOG */
+#result {
+  background: #edf1f5;
+  padding: 14px;
+  border-radius: 9px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+  font-size: 14px;
+}
 
-    #result {
-      background: #edf1f5;
-      padding: 14px;
-      border-radius: 9px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      margin-top: 12px;
-      font-size: 14px;
-    }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
 
-    /* DASHBOARD */
+.stat-box {
+  background: #edf3f0;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #334155;
+}
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin: 16px 0;
-    }
+.stat-box strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 29px;
+  color: #18212b;
+}
 
-    .stat-box {
-      background: #edf3f0;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 14px;
-      color: #334155;
-    }
-
-    .stat-box strong {
-      display: block;
-      margin-top: 10px;
-      font-size: 29px;
-      color: #18212b;
-    }
-
-    #stats-message {
-      font-size: 14px;
-      color: #475569;
-      overflow-wrap: anywhere;
-    }
-  </style>
+#stats-message {
+  font-size: 14px;
+  color: #475569;
+  overflow-wrap: anywhere;
+}
+</style>
 </head>
 
 <body>
 <main>
 
-  <h1>University of Sri Jayewardenepura</h1>
+<h1>University of Sri Jayewardenepura</h1>
 
-  <p class="muted">
-    Biological Sciences Meetup — Volunteer QR Scanner
+<p class="muted">
+  Biological Sciences Meetup — Volunteer QR Scanner
+</p>
+
+<!-- GOOGLE SIGN-IN -->
+
+<section class="card">
+  <h2>Volunteer Sign-in</h2>
+
+  <div id="googleSignIn"></div>
+
+  <p id="loginStatus">
+    Please sign in with Google.
+  </p>
+</section>
+
+<!-- QR SCANNER -->
+
+<section class="card">
+
+  <h2>Scan Participant Ticket</h2>
+
+  <select id="action" onchange="handleActionChange()">
+    <option value="ATTENDANCE">
+      Entrance Attendance
+    </option>
+
+    <option value="MEAL">
+      Meal Collection
+    </option>
+
+    <option value="DRINK">
+      Beverage Collection
+    </option>
+  </select>
+
+  <div id="reader"></div>
+
+  <!-- LARGE SUCCESS / ERROR PANEL -->
+
+  <div
+    id="scan-panel"
+    role="status"
+    aria-live="polite"
+  >
+    <div id="scan-panel-title"></div>
+    <div id="scan-panel-symbol"></div>
+    <div id="scan-panel-main"></div>
+    <div id="scan-panel-name"></div>
+    <div id="scan-panel-id"></div>
+    <div id="scan-panel-status"></div>
+  </div>
+
+  <button
+    id="start"
+    onclick="startScanner()"
+    disabled
+  >
+    Start Camera
+  </button>
+
+  <button onclick="stopScanner()">
+    Stop Camera
+  </button>
+
+  <input
+    id="manual"
+    placeholder="Enter ticket token manually"
+    autocomplete="off"
+  >
+
+  <button onclick="submitManual()">
+    Verify Ticket
+  </button>
+
+  <div id="result" role="status" aria-live="polite">
+    Sign in to begin.
+  </div>
+
+</section>
+
+<!-- DASHBOARD -->
+
+<section class="card">
+
+  <h2>Event Dashboard</h2>
+
+  <div class="stats-grid">
+
+    <div class="stat-box">
+      Registered
+      <strong id="stat-registered">—</strong>
+    </div>
+
+    <div class="stat-box">
+      Valid Tickets
+      <strong id="stat-valid">—</strong>
+    </div>
+
+    <div class="stat-box">
+      Attendance
+      <strong id="stat-attendance">—</strong>
+    </div>
+
+    <div class="stat-box">
+      Meals Collected
+      <strong id="stat-meals">—</strong>
+    </div>
+
+    <div class="stat-box">
+      Drinks Collected
+      <strong id="stat-drinks">—</strong>
+    </div>
+
+  </div>
+
+  <button
+    id="refresh-stats"
+    onclick="refreshStatistics()"
+    disabled
+  >
+    Refresh Statistics
+  </button>
+
+  <p id="stats-message">
+    Sign in to view statistics.
   </p>
 
-  <!-- GOOGLE SIGN-IN -->
-
-  <section class="card">
-    <h2>Volunteer Sign-in</h2>
-
-    <div id="googleSignIn"></div>
-
-    <p id="loginStatus">
-      Please sign in with Google.
-    </p>
-  </section>
-
-  <!-- QR SCANNER -->
-
-  <section class="card">
-
-    <h2>Scan Participant Ticket</h2>
-
-    <select id="action" onchange="handleActionChange()">
-      <option value="ATTENDANCE">
-        Entrance Attendance
-      </option>
-
-      <option value="MEAL">
-        Meal Collection
-      </option>
-
-      <option value="DRINK">
-        Beverage Collection
-      </option>
-    </select>
-
-    <!-- LIVE CAMERA -->
-
-    <div id="reader"></div>
-
-    <!-- LARGE SUCCESS / ERROR PANEL -->
-
-    <div
-      id="scan-panel"
-      role="status"
-      aria-live="polite"
-    >
-      <div id="scan-panel-title"></div>
-
-      <div id="scan-panel-symbol"></div>
-
-      <div id="scan-panel-main"></div>
-
-      <div id="scan-panel-name"></div>
-
-      <div id="scan-panel-id"></div>
-
-      <div id="scan-panel-status"></div>
-    </div>
-
-    <button
-      id="start"
-      onclick="startScanner()"
-      disabled
-    >
-      Start Camera
-    </button>
-
-    <button onclick="stopScanner()">
-      Stop Camera
-    </button>
-
-    <input
-      id="manual"
-      placeholder="Enter ticket token manually"
-      autocomplete="off"
-    >
-
-    <button onclick="submitManual()">
-      Verify Ticket
-    </button>
-
-    <div
-      id="result"
-      role="status"
-      aria-live="polite"
-    >
-      Sign in to begin.
-    </div>
-
-  </section>
-
-  <!-- EVENT DASHBOARD -->
-
-  <section class="card">
-
-    <h2>Event Dashboard</h2>
-
-    <div class="stats-grid">
-
-      <div class="stat-box">
-        Registered
-        <strong id="stat-registered">—</strong>
-      </div>
-
-      <div class="stat-box">
-        Valid Tickets
-        <strong id="stat-valid">—</strong>
-      </div>
-
-      <div class="stat-box">
-        Attendance
-        <strong id="stat-attendance">—</strong>
-      </div>
-
-      <div class="stat-box">
-        Meals Collected
-        <strong id="stat-meals">—</strong>
-      </div>
-
-      <div class="stat-box">
-        Drinks Collected
-        <strong id="stat-drinks">—</strong>
-      </div>
-
-    </div>
-
-    <button
-      id="refresh-stats"
-      onclick="refreshStatistics()"
-      disabled
-    >
-      Refresh Statistics
-    </button>
-
-    <p id="stats-message">
-      Sign in to view statistics.
-    </p>
-
-  </section>
+</section>
 
 </main>
 
 <script>
 
-  // =====================================
-  // CONFIGURATION
-  // =====================================
+// =====================================
+// CONFIGURATION
+// =====================================
 
-  const GOOGLE_CLIENT_ID =
-    "641763292567-2dn41uk6bass65nmtbm5l58ejdmfmrpa.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID =
+  "641763292567-2dn41uk6bass65nmtbm5l58ejdmfmrpa.apps.googleusercontent.com";
 
-  const WORKER_URL =
-    "https://summer-tooth-9f31.geenidud.workers.dev";
+const WORKER_URL =
+  "https://summer-tooth-9f31.geenidud.workers.dev";
 
-  const API_URL = WORKER_URL + "/health";
+const API_URL = WORKER_URL + "/health";
 
-  let idToken = "";
-  let scanner = null;
-  let busy = false;
-  let statsBusy = false;
+let idToken = "";
+let scanner = null;
+let busy = false;
+let statsBusy = false;
 
-  // Remember successful scans separately
-  // for ATTENDANCE, MEAL and DRINK.
-  const successfulScans = new Set();
+// Track the QR code currently presented
+// to the camera, not every successful
+// ticket for the entire session.
 
-  // Prevent repeated failed scans from
-  // constantly changing the display.
-  let lastAttemptKey = "";
-  let lastAttemptTime = 0;
+let currentQRKey = "";
+let lastQRSeenAt = 0;
 
-  const RETRY_DELAY_MS = 10000;
+// A different QR immediately releases
+// the previous QR.
+//
+// A QR that disappears long enough can
+// be scanned again without reloading.
 
-  // =====================================
-  // DISPLAY HELPERS
-  // =====================================
+const QR_ABSENCE_MS = 2500;
 
-  function showResult(message) {
-    document.getElementById("result").textContent =
-      message;
+// After an API response, don't reprocess
+// the same continuously visible QR.
+
+let currentQRProcessed = false;
+
+// =====================================
+// DISPLAY HELPERS
+// =====================================
+
+function showResult(message) {
+  document.getElementById("result").textContent =
+    message;
+}
+
+function setStatsMessage(message) {
+  document.getElementById("stats-message").textContent =
+    message;
+}
+
+function clearScanPanel() {
+  const panel =
+    document.getElementById("scan-panel");
+
+  panel.style.display = "none";
+  panel.classList.remove("error");
+
+  [
+    "scan-panel-title",
+    "scan-panel-symbol",
+    "scan-panel-main",
+    "scan-panel-name",
+    "scan-panel-id",
+    "scan-panel-status"
+  ].forEach(id => {
+    document.getElementById(id).textContent = "";
+  });
+}
+
+function handleActionChange() {
+  clearScanPanel();
+
+  currentQRKey = "";
+  currentQRProcessed = false;
+  lastQRSeenAt = 0;
+
+  showResult("Ready to scan.");
+}
+
+// =====================================
+// LARGE SUCCESS PANEL
+// =====================================
+
+function showSuccessPanel(data, action) {
+  const panel =
+    document.getElementById("scan-panel");
+
+  panel.classList.remove("error");
+
+  let title = "";
+  let mainText = "";
+  let status = "";
+
+  if (action === "ATTENDANCE") {
+    title = "ENTRANCE ATTENDANCE";
+    mainText = "ATTENDANCE SUCCESSFUL";
+    status = "✓ Entry recorded successfully";
   }
 
-  function setStatsMessage(message) {
-    document.getElementById("stats-message").textContent =
-      message;
+  if (action === "MEAL") {
+    title = "MEAL COLLECTION";
+
+    const preference =
+      String(data.foodPreference || "").trim();
+
+    mainText = preference
+      ? preference.toUpperCase()
+      : "FOOD PREFERENCE NOT RECORDED";
+
+    status = "✓ Meal collection recorded successfully";
   }
 
-  function clearScanPanel() {
-    const panel =
-      document.getElementById("scan-panel");
-
-    panel.style.display = "none";
-    panel.classList.remove("error");
-
-    const ids = [
-      "scan-panel-title",
-      "scan-panel-symbol",
-      "scan-panel-main",
-      "scan-panel-name",
-      "scan-panel-id",
-      "scan-panel-status"
-    ];
-
-    ids.forEach(id => {
-      document.getElementById(id).textContent = "";
-    });
+  if (action === "DRINK") {
+    title = "BEVERAGE COLLECTION";
+    mainText = "DRINK COLLECTED";
+    status = "✓ Beverage collection recorded successfully";
   }
 
-  function handleActionChange() {
-    clearScanPanel();
+  document.getElementById(
+    "scan-panel-title"
+  ).textContent = title;
 
-    lastAttemptKey = "";
-    lastAttemptTime = 0;
+  document.getElementById(
+    "scan-panel-symbol"
+  ).textContent = "✓";
 
-    showResult("Ready to scan.");
+  document.getElementById(
+    "scan-panel-main"
+  ).textContent = mainText;
+
+  document.getElementById(
+    "scan-panel-name"
+  ).textContent = data.name || "Participant";
+
+  document.getElementById(
+    "scan-panel-id"
+  ).textContent = data.participantID || "";
+
+  document.getElementById(
+    "scan-panel-status"
+  ).textContent = status;
+
+  panel.style.display = "block";
+}
+
+// =====================================
+// LARGE ERROR PANEL
+// =====================================
+
+function showErrorPanel(message, action) {
+  const panel =
+    document.getElementById("scan-panel");
+
+  panel.classList.add("error");
+
+  let title = "";
+  let mainText = "";
+
+  const normalized =
+    String(message || "").toLowerCase();
+
+  const duplicate =
+    normalized.includes("already") ||
+    normalized.includes("duplicate") ||
+    normalized.includes("limit") ||
+    normalized.includes("collected");
+
+  if (action === "ATTENDANCE") {
+    title = "ENTRANCE ATTENDANCE";
+    mainText = duplicate
+      ? "ALREADY RECORDED"
+      : "ENTRY NOT RECORDED";
   }
 
-  // =====================================
-  // LARGE SUCCESS PANEL
-  // =====================================
-
-  function showSuccessPanel(data, action) {
-    const panel =
-      document.getElementById("scan-panel");
-
-    panel.classList.remove("error");
-
-    let title = "";
-    let mainText = "";
-    let status = "";
-
-    if (action === "ATTENDANCE") {
-      title = "ENTRANCE ATTENDANCE";
-      mainText = "ATTENDANCE SUCCESSFUL";
-      status = "✓ Entry recorded successfully";
-    }
-
-    if (action === "MEAL") {
-      title = "MEAL COLLECTION";
-
-      const preference =
-        String(data.foodPreference || "").trim();
-
-      mainText = preference
-        ? preference.toUpperCase()
-        : "FOOD PREFERENCE NOT RECORDED";
-
-      status = "✓ Meal collection recorded successfully";
-    }
-
-    if (action === "DRINK") {
-      title = "BEVERAGE COLLECTION";
-      mainText = "DRINK COLLECTED";
-      status = "✓ Beverage collection recorded successfully";
-    }
-
-    document.getElementById(
-      "scan-panel-title"
-    ).textContent = title;
-
-    document.getElementById(
-      "scan-panel-symbol"
-    ).textContent = "✓";
-
-    document.getElementById(
-      "scan-panel-main"
-    ).textContent = mainText;
-
-    document.getElementById(
-      "scan-panel-name"
-    ).textContent = data.name || "Participant";
-
-    document.getElementById(
-      "scan-panel-id"
-    ).textContent = data.participantID || "";
-
-    document.getElementById(
-      "scan-panel-status"
-    ).textContent = status;
-
-    panel.style.display = "block";
+  if (action === "MEAL") {
+    title = "MEAL COLLECTION";
+    mainText = duplicate
+      ? "ALREADY COLLECTED"
+      : "DO NOT DISTRIBUTE";
   }
 
-  // =====================================
-  // LARGE ERROR PANEL
-  // =====================================
-
-  function showErrorPanel(message, action) {
-    const panel =
-      document.getElementById("scan-panel");
-
-    panel.classList.add("error");
-
-    let title = "";
-    let mainText = "";
-
-    if (action === "ATTENDANCE") {
-      title = "ENTRANCE ATTENDANCE";
-      mainText = "ENTRY NOT RECORDED";
-    }
-
-    if (action === "MEAL") {
-      title = "MEAL COLLECTION";
-      mainText = "DO NOT DISTRIBUTE";
-    }
-
-    if (action === "DRINK") {
-      title = "BEVERAGE COLLECTION";
-      mainText = "DO NOT DISTRIBUTE";
-    }
-
-    document.getElementById(
-      "scan-panel-title"
-    ).textContent = title;
-
-    document.getElementById(
-      "scan-panel-symbol"
-    ).textContent = "✕";
-
-    document.getElementById(
-      "scan-panel-main"
-    ).textContent = mainText;
-
-    document.getElementById(
-      "scan-panel-name"
-    ).textContent = "";
-
-    document.getElementById(
-      "scan-panel-id"
-    ).textContent = "";
-
-    document.getElementById(
-      "scan-panel-status"
-    ).textContent = message;
-
-    panel.style.display = "block";
+  if (action === "DRINK") {
+    title = "BEVERAGE COLLECTION";
+    mainText = duplicate
+      ? "ALREADY COLLECTED"
+      : "DO NOT DISTRIBUTE";
   }
 
-  // =====================================
-  // API CONNECTION
-  // =====================================
+  document.getElementById(
+    "scan-panel-title"
+  ).textContent = title;
 
-  async function apiRequest(payload) {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain"
-      },
-      body: JSON.stringify({
-        idToken,
-        ...payload
-      })
-    });
+  document.getElementById(
+    "scan-panel-symbol"
+  ).textContent = "✕";
 
-    let data;
+  document.getElementById(
+    "scan-panel-main"
+  ).textContent = mainText;
 
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(
-        "Server returned an invalid response."
-      );
-    }
+  document.getElementById(
+    "scan-panel-name"
+  ).textContent = "";
 
-    if (!response.ok || !data.ok) {
-      throw new Error(
-        data.message || "Request failed."
-      );
-    }
+  document.getElementById(
+    "scan-panel-id"
+  ).textContent = "";
 
-    return data;
-  }
+  document.getElementById(
+    "scan-panel-status"
+  ).textContent = message;
 
-  // =====================================
-  // GOOGLE SIGN-IN
-  // =====================================
+  panel.style.display = "block";
+}
 
-  function handleCredential(response) {
-    idToken = response.credential;
+// =====================================
+// API
+// =====================================
 
-    document.getElementById(
-      "loginStatus"
-    ).textContent =
-      "Google sign-in received. Ready to scan.";
+async function apiRequest(payload) {
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain"
+    },
+    body: JSON.stringify({
+      idToken,
+      ...payload
+    })
+  });
 
-    document.getElementById(
-      "start"
-    ).disabled = false;
+  let data;
 
-    document.getElementById(
-      "refresh-stats"
-    ).disabled = false;
-
-    showResult(
-      "Choose an action and start scanning."
-    );
-
-    clearScanPanel();
-
-    refreshStatistics();
-  }
-
-  function initializeGoogle() {
-    if (!window.google || !google.accounts) {
-      setTimeout(initializeGoogle, 300);
-      return;
-    }
-
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredential
-    });
-
-    google.accounts.id.renderButton(
-      document.getElementById("googleSignIn"),
-      {
-        theme: "outline",
-        size: "large"
-      }
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(
+      "Server returned an invalid response."
     );
   }
 
-  initializeGoogle();
+  if (!response.ok || !data.ok) {
+    throw new Error(
+      data.message || "Request failed."
+    );
+  }
 
-  // =====================================
-  // EVENT DASHBOARD
-  // =====================================
+  return data;
+}
 
-  async function refreshStatistics() {
-    if (!idToken) {
-      setStatsMessage(
-        "Sign in with Google first."
+// =====================================
+// GOOGLE SIGN-IN
+// =====================================
+
+function handleCredential(response) {
+  idToken = response.credential;
+
+  document.getElementById(
+    "loginStatus"
+  ).textContent =
+    "Google sign-in received. Ready to scan.";
+
+  document.getElementById(
+    "start"
+  ).disabled = false;
+
+  document.getElementById(
+    "refresh-stats"
+  ).disabled = false;
+
+  clearScanPanel();
+
+  showResult(
+    "Choose an action and start scanning."
+  );
+
+  refreshStatistics();
+}
+
+function initializeGoogle() {
+  if (!window.google || !google.accounts) {
+    setTimeout(initializeGoogle, 300);
+    return;
+  }
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredential
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById("googleSignIn"),
+    {
+      theme: "outline",
+      size: "large"
+    }
+  );
+}
+
+initializeGoogle();
+
+// =====================================
+// DASHBOARD
+// =====================================
+
+async function refreshStatistics() {
+  if (!idToken) {
+    setStatsMessage(
+      "Sign in with Google first."
+    );
+    return;
+  }
+
+  if (statsBusy) return;
+
+  statsBusy = true;
+
+  document.getElementById(
+    "refresh-stats"
+  ).disabled = true;
+
+  setStatsMessage("Loading statistics...");
+
+  try {
+    const data = await apiRequest({
+      action: "STATS",
+      ticketToken: ""
+    });
+
+    if (
+      !data.stats ||
+      typeof data.stats !== "object"
+    ) {
+      throw new Error(
+        "Statistics data missing."
       );
-      return;
     }
 
-    if (statsBusy) return;
+    const stats = data.stats;
 
-    statsBusy = true;
+    const fields = {
+      "stat-registered": stats.registered,
+      "stat-valid": stats.validTickets,
+      "stat-attendance": stats.attendance,
+      "stat-meals": stats.meals,
+      "stat-drinks": stats.drinks
+    };
 
-    document.getElementById(
-      "refresh-stats"
-    ).disabled = true;
-
-    setStatsMessage("Loading statistics...");
-
-    try {
-      const data = await apiRequest({
-        action: "STATS",
-        ticketToken: ""
-      });
-
+    for (const [id, value] of Object.entries(fields)) {
       if (
-        !data.stats ||
-        typeof data.stats !== "object"
+        typeof value !== "number" ||
+        !Number.isFinite(value)
       ) {
         throw new Error(
-          "Statistics data missing from server response."
+          "Incomplete statistics response."
         );
       }
 
-      const stats = data.stats;
+      document.getElementById(id).textContent =
+        value.toLocaleString();
+    }
 
-      const fields = {
-        "stat-registered": stats.registered,
-        "stat-valid": stats.validTickets,
-        "stat-attendance": stats.attendance,
-        "stat-meals": stats.meals,
-        "stat-drinks": stats.drinks
-      };
+    setStatsMessage(
+      "Statistics updated at " +
+      new Date().toLocaleTimeString() +
+      "."
+    );
 
-      for (const [id, value] of Object.entries(fields)) {
-        if (
-          typeof value !== "number" ||
-          !Number.isFinite(value)
-        ) {
-          throw new Error(
-            "Incomplete statistics response."
-          );
+  } catch (error) {
+    setStatsMessage(
+      "Could not load statistics: " +
+      error.message
+    );
+
+  } finally {
+    statsBusy = false;
+
+    document.getElementById(
+      "refresh-stats"
+    ).disabled = !idToken;
+  }
+}
+
+// =====================================
+// QR PRESENTATION TRACKING
+// =====================================
+
+function handleDecodedQR(decodedText) {
+  const token = String(decodedText || "").trim();
+
+  if (!token) return;
+
+  const action =
+    document.getElementById("action").value;
+
+  const key = action + ":" + token;
+
+  const now = Date.now();
+
+  // Different QR means a new presentation.
+  const differentQR = key !== currentQRKey;
+
+  // A previously visible QR may be presented
+  // again after it was absent for a while.
+  //
+  // This is best-effort because QR decoding
+  // callbacks do not report every frame
+  // where no QR is visible.
+  const absentLongEnough =
+    currentQRKey === key &&
+    lastQRSeenAt > 0 &&
+    now - lastQRSeenAt > QR_ABSENCE_MS;
+
+  if (differentQR || absentLongEnough) {
+    currentQRKey = key;
+    currentQRProcessed = false;
+  }
+
+  lastQRSeenAt = now;
+
+  // Never submit multiple requests while
+  // a request is already in progress.
+  if (busy) return;
+
+  // The same continuously visible QR
+  // should not repeatedly overwrite
+  // the success or error panel.
+  if (currentQRProcessed) return;
+
+  currentQRProcessed = true;
+
+  processToken(token, action);
+}
+
+// =====================================
+// CAMERA
+// =====================================
+
+async function startScanner() {
+  if (!idToken) {
+    showResult(
+      "Sign in with Google first."
+    );
+    return;
+  }
+
+  if (scanner) return;
+
+  try {
+    scanner = new Html5Qrcode("reader");
+
+    await scanner.start(
+      {
+        facingMode: "environment"
+      },
+      {
+        fps: 10,
+        qrbox: {
+          width: 230,
+          height: 230
         }
+      },
 
-        document.getElementById(id).textContent =
-          value.toLocaleString();
-      }
+      decodedText => {
+        handleDecodedQR(decodedText);
+      },
 
-      setStatsMessage(
-        "Statistics updated at " +
-        new Date().toLocaleTimeString() +
-        "."
-      );
-
-    } catch (error) {
-      setStatsMessage(
-        "Could not load statistics: " +
-        error.message
-      );
-
-    } finally {
-      statsBusy = false;
-
-      document.getElementById(
-        "refresh-stats"
-      ).disabled = !idToken;
-    }
-  }
-
-  // =====================================
-  // CAMERA SCANNER
-  // =====================================
-
-  async function startScanner() {
-    if (!idToken) {
-      showResult(
-        "Sign in with Google first."
-      );
-      return;
-    }
-
-    if (scanner) return;
-
-    try {
-      scanner = new Html5Qrcode("reader");
-
-      await scanner.start(
-        {
-          facingMode: "environment"
-        },
-        {
-          fps: 10,
-          qrbox: {
-            width: 230,
-            height: 230
-          }
-        },
-
-        decodedText => {
-          const action =
-            document.getElementById("action").value;
-
-          const token = decodedText.trim();
-
-          if (!token) return;
-
-          const key = action + ":" + token;
-
-          const now = Date.now();
-
-          // Ignore repeated readings of
-          // successfully processed tickets.
-          if (successfulScans.has(key)) {
-            return;
-          }
-
-          // Only process one ticket at a time.
-          if (busy) {
-            return;
-          }
-
-          // Prevent a rejected QR code from
-          // triggering warnings continuously.
-          if (
-            key === lastAttemptKey &&
-            now - lastAttemptTime < RETRY_DELAY_MS
-          ) {
-            return;
-          }
-
-          lastAttemptKey = key;
-          lastAttemptTime = now;
-
-          processToken(token, action);
-        },
-
-        () => {}
-      );
-
-      document.getElementById(
-        "start"
-      ).disabled = true;
-
-      showResult(
-        "Camera ready. Scan a ticket."
-      );
-
-    } catch (error) {
-      scanner = null;
-
-      document.getElementById(
-        "start"
-      ).disabled = false;
-
-      showResult(
-        "Camera error: " + error.message
-      );
-    }
-  }
-
-  async function stopScanner() {
-    if (!scanner) return;
-
-    const current = scanner;
-    scanner = null;
-
-    try {
-      await current.stop();
-      await current.clear();
-    } catch (error) {
-      console.error(error);
-    }
+      () => {}
+    );
 
     document.getElementById(
       "start"
-    ).disabled = !idToken;
-  }
-
-  // =====================================
-  // MANUAL TICKET VERIFICATION
-  // =====================================
-
-  function submitManual() {
-    const token =
-      document.getElementById("manual").value.trim();
-
-    if (!token) {
-      showResult(
-        "Please enter a ticket token."
-      );
-      return;
-    }
-
-    const action =
-      document.getElementById("action").value;
-
-    processToken(token, action);
-  }
-
-  // =====================================
-  // PROCESS TICKET
-  // =====================================
-
-  async function processToken(ticketToken, action) {
-    if (busy) return;
-
-    if (!idToken) {
-      showResult(
-        "Please sign in with Google."
-      );
-      return;
-    }
-
-    const key = action + ":" + ticketToken;
-
-    // Do not replace an earlier success
-    // with a duplicate error.
-    if (successfulScans.has(key)) {
-      return;
-    }
-
-    busy = true;
-
-    clearScanPanel();
+    ).disabled = true;
 
     showResult(
-      "Verifying ticket..."
+      "Camera ready. Scan a ticket."
     );
 
-    try {
-      const data = await apiRequest({
-        ticketToken,
-        action
-      });
+  } catch (error) {
+    scanner = null;
 
-      // Remember this successful scan.
-      successfulScans.add(key);
+    document.getElementById(
+      "start"
+    ).disabled = false;
 
-      showSuccessPanel(data, action);
-
-      showResult(
-        "SUCCESS\n" +
-        data.name +
-        "\nParticipant: " +
-        data.participantID +
-        "\n" +
-        data.message
-      );
-
-      document.getElementById(
-        "manual"
-      ).value = "";
-
-      refreshStatistics();
-
-    } catch (error) {
-      showErrorPanel(
-        error.message,
-        action
-      );
-
-      showResult(
-        "NOT RECORDED\n" +
-        error.message
-      );
-
-    } finally {
-      busy = false;
-    }
+    showResult(
+      "Camera error: " + error.message
+    );
   }
+}
+
+async function stopScanner() {
+  if (!scanner) return;
+
+  const current = scanner;
+  scanner = null;
+
+  try {
+    await current.stop();
+    await current.clear();
+  } catch (error) {
+    console.error(error);
+  }
+
+  document.getElementById(
+    "start"
+  ).disabled = !idToken;
+
+  currentQRKey = "";
+  currentQRProcessed = false;
+  lastQRSeenAt = 0;
+}
+
+// =====================================
+// MANUAL VERIFICATION
+// =====================================
+
+function submitManual() {
+  const token =
+    document.getElementById("manual").value.trim();
+
+  if (!token) {
+    showResult(
+      "Please enter a ticket token."
+    );
+    return;
+  }
+
+  const action =
+    document.getElementById("action").value;
+
+  if (busy) return;
+
+  // Manual verification is an explicit
+  // user request, so always check the
+  // backend again.
+  processToken(token, action);
+}
+
+// =====================================
+// PROCESS TICKET
+// =====================================
+
+async function processToken(ticketToken, action) {
+  if (busy) return;
+
+  if (!idToken) {
+    showResult(
+      "Please sign in with Google."
+    );
+    return;
+  }
+
+  busy = true;
+
+  clearScanPanel();
+
+  showResult(
+    "Verifying ticket..."
+  );
+
+  try {
+    const data = await apiRequest({
+      ticketToken,
+      action
+    });
+
+    showSuccessPanel(data, action);
+
+    showResult(
+      "SUCCESS\n" +
+      data.name +
+      "\nParticipant: " +
+      data.participantID +
+      "\n" +
+      data.message
+    );
+
+    document.getElementById(
+      "manual"
+    ).value = "";
+
+    refreshStatistics();
+
+  } catch (error) {
+    showErrorPanel(
+      error.message,
+      action
+    );
+
+    showResult(
+      "NOT RECORDED\n" +
+      error.message
+    );
+
+  } finally {
+    busy = false;
+  }
+}
 
 </script>
 </body>
