@@ -5,18 +5,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>USJ Biological Sciences Meetup Scanner</title>
+  <title>Biological Sciences Meetup Scanner</title>
 
   <script src="https://unpkg.com/html5-qrcode"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background: #f4f6f8;
+      color: #18212b;
       margin: 0;
       padding: 16px;
-      color: #18212b;
     }
 
     main {
@@ -27,16 +31,27 @@
     .card {
       background: white;
       padding: 18px;
-      border-radius: 14px;
+      border-radius: 16px;
       margin-bottom: 16px;
     }
 
     h1 {
       font-size: 23px;
+      margin-bottom: 8px;
     }
 
-    select, input, button {
-      box-sizing: border-box;
+    h2 {
+      font-size: 20px;
+    }
+
+    .muted {
+      color: #647181;
+      font-size: 13px;
+    }
+
+    select,
+    input,
+    button {
       width: 100%;
       padding: 13px;
       margin: 7px 0;
@@ -44,7 +59,8 @@
       border-radius: 9px;
     }
 
-    select, input {
+    select,
+    input {
       background: white;
       border: 1px solid #cbd2da;
     }
@@ -64,7 +80,77 @@
 
     #reader {
       width: 100%;
+      overflow: hidden;
     }
+
+    /* LARGE RESULT PANEL */
+
+    #scan-panel {
+      display: none;
+      margin: 14px 0;
+      padding: 22px 14px;
+      border-radius: 16px;
+      border: 3px solid #15803d;
+      background: #edf7ee;
+      text-align: center;
+    }
+
+    #scan-panel.error {
+      background: #fff1f2;
+      border-color: #dc2626;
+    }
+
+    #scan-panel-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    #scan-panel-symbol {
+      font-size: 44px;
+      font-weight: bold;
+      color: #15803d;
+      margin-bottom: 8px;
+    }
+
+    #scan-panel.error #scan-panel-symbol {
+      color: #dc2626;
+    }
+
+    #scan-panel-main {
+      font-size: 30px;
+      line-height: 1.2;
+      font-weight: 800;
+      color: #166534;
+      overflow-wrap: anywhere;
+      margin: 10px 0;
+    }
+
+    #scan-panel.error #scan-panel-main {
+      color: #991b1b;
+    }
+
+    #scan-panel-name {
+      font-size: 19px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+      margin-top: 12px;
+    }
+
+    #scan-panel-id {
+      font-size: 15px;
+      color: #475569;
+      margin-top: 6px;
+    }
+
+    #scan-panel-status {
+      font-size: 15px;
+      font-weight: bold;
+      margin-top: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    /* SMALL RESULT LOG */
 
     #result {
       background: #edf1f5;
@@ -73,59 +159,10 @@
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       margin-top: 12px;
-    }
-
-    .muted {
-      color: #647181;
-      font-size: 13px;
-    }
-
-    /* FOOD PREFERENCE PANEL */
-
-    #food-panel {
-      display: none;
-      margin: 12px 0;
-      padding: 18px;
-      border-radius: 14px;
-      background: #edf7ee;
-      border: 2px solid #15803d;
-      text-align: center;
-    }
-
-    #food-panel h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-
-    #food-name {
-      font-size: 17px;
-      margin-bottom: 10px;
-      overflow-wrap: anywhere;
-    }
-
-    #food-preference {
-      font-size: 30px;
-      font-weight: bold;
-      color: #166534;
-      overflow-wrap: anywhere;
-    }
-
-    #food-status {
-      margin-top: 10px;
       font-size: 14px;
-      font-weight: bold;
     }
 
-    #food-panel.error {
-      background: #fff1f2;
-      border-color: #dc2626;
-    }
-
-    #food-panel.error #food-preference {
-      color: #991b1b;
-    }
-
-    /* EVENT DASHBOARD */
+    /* DASHBOARD */
 
     .stats-grid {
       display: grid;
@@ -150,8 +187,8 @@
     }
 
     #stats-message {
-      color: #475569;
       font-size: 14px;
+      color: #475569;
       overflow-wrap: anywhere;
     }
   </style>
@@ -161,6 +198,7 @@
 <main>
 
   <h1>University of Sri Jayewardenepura</h1>
+
   <p class="muted">
     Biological Sciences Meetup — Volunteer QR Scanner
   </p>
@@ -168,7 +206,7 @@
   <!-- GOOGLE SIGN-IN -->
 
   <section class="card">
-    <h2>Volunteer sign-in</h2>
+    <h2>Volunteer Sign-in</h2>
 
     <div id="googleSignIn"></div>
 
@@ -177,23 +215,23 @@
     </p>
   </section>
 
-  <!-- SCANNER -->
+  <!-- QR SCANNER -->
 
   <section class="card">
 
-    <h2>Scan participant ticket</h2>
+    <h2>Scan Participant Ticket</h2>
 
     <select id="action" onchange="handleActionChange()">
       <option value="ATTENDANCE">
-        Entrance attendance
+        Entrance Attendance
       </option>
 
       <option value="MEAL">
-        Meal collection
+        Meal Collection
       </option>
 
       <option value="DRINK">
-        Beverage collection
+        Beverage Collection
       </option>
     </select>
 
@@ -201,22 +239,31 @@
 
     <div id="reader"></div>
 
-    <!-- FOOD PREFERENCE BELOW CAMERA -->
+    <!-- LARGE SUCCESS / ERROR PANEL -->
 
-    <div id="food-panel" role="status" aria-live="polite">
-      <h3>MEAL COLLECTION</h3>
+    <div
+      id="scan-panel"
+      role="status"
+      aria-live="polite"
+    >
+      <div id="scan-panel-title"></div>
 
-      <div id="food-name"></div>
+      <div id="scan-panel-symbol"></div>
 
-      <div id="food-preference"></div>
+      <div id="scan-panel-main"></div>
 
-      <div id="food-status"></div>
+      <div id="scan-panel-name"></div>
+
+      <div id="scan-panel-id"></div>
+
+      <div id="scan-panel-status"></div>
     </div>
 
     <button
       id="start"
       onclick="startScanner()"
-      disabled>
+      disabled
+    >
       Start Camera
     </button>
 
@@ -234,15 +281,19 @@
       Verify Ticket
     </button>
 
-    <div id="result" role="status" aria-live="polite">
+    <div
+      id="result"
+      role="status"
+      aria-live="polite"
+    >
       Sign in to begin.
     </div>
 
   </section>
 
-  <!-- DASHBOARD -->
+  <!-- EVENT DASHBOARD -->
 
-  <section class="card" id="event-dashboard">
+  <section class="card">
 
     <h2>Event Dashboard</h2>
 
@@ -254,7 +305,7 @@
       </div>
 
       <div class="stat-box">
-        Valid tickets
+        Valid Tickets
         <strong id="stat-valid">—</strong>
       </div>
 
@@ -264,12 +315,12 @@
       </div>
 
       <div class="stat-box">
-        Meals collected
+        Meals Collected
         <strong id="stat-meals">—</strong>
       </div>
 
       <div class="stat-box">
-        Drinks collected
+        Drinks Collected
         <strong id="stat-drinks">—</strong>
       </div>
 
@@ -278,11 +329,12 @@
     <button
       id="refresh-stats"
       onclick="refreshStatistics()"
-      disabled>
+      disabled
+    >
       Refresh Statistics
     </button>
 
-    <p id="stats-message" role="status" aria-live="polite">
+    <p id="stats-message">
       Sign in to view statistics.
     </p>
 
@@ -309,16 +361,15 @@
   let busy = false;
   let statsBusy = false;
 
-  // Remember successfully scanned QR codes
-  // separately for each action.
+  // Remember successful scans separately
+  // for ATTENDANCE, MEAL and DRINK.
   const successfulScans = new Set();
 
-  // Remember the last scan outcome so the
-  // same QR doesn't immediately overwrite it.
+  // Prevent repeated failed scans from
+  // constantly changing the display.
   let lastAttemptKey = "";
   let lastAttemptTime = 0;
 
-  // Suppress rapid repeated failed attempts.
   const RETRY_DELAY_MS = 10000;
 
   // =====================================
@@ -335,22 +386,29 @@
       message;
   }
 
-  function clearFoodPanel() {
+  function clearScanPanel() {
     const panel =
-      document.getElementById("food-panel");
+      document.getElementById("scan-panel");
 
     panel.style.display = "none";
     panel.classList.remove("error");
 
-    document.getElementById("food-name").textContent = "";
+    const ids = [
+      "scan-panel-title",
+      "scan-panel-symbol",
+      "scan-panel-main",
+      "scan-panel-name",
+      "scan-panel-id",
+      "scan-panel-status"
+    ];
 
-    document.getElementById("food-preference").textContent = "";
-
-    document.getElementById("food-status").textContent = "";
+    ids.forEach(id => {
+      document.getElementById(id).textContent = "";
+    });
   }
 
   function handleActionChange() {
-    clearFoodPanel();
+    clearScanPanel();
 
     lastAttemptKey = "";
     lastAttemptTime = 0;
@@ -359,46 +417,122 @@
   }
 
   // =====================================
-  // FOOD PREFERENCE DISPLAY
+  // LARGE SUCCESS PANEL
   // =====================================
 
-  function showFoodPreference(data) {
+  function showSuccessPanel(data, action) {
     const panel =
-      document.getElementById("food-panel");
+      document.getElementById("scan-panel");
 
     panel.classList.remove("error");
 
-    document.getElementById("food-name").textContent =
-      data.name || "Participant";
+    let title = "";
+    let mainText = "";
+    let status = "";
 
-    const preference =
-      String(data.foodPreference || "").trim();
+    if (action === "ATTENDANCE") {
+      title = "ENTRANCE ATTENDANCE";
+      mainText = "ATTENDANCE SUCCESSFUL";
+      status = "✓ Entry recorded successfully";
+    }
 
-    document.getElementById("food-preference").textContent =
-      preference
+    if (action === "MEAL") {
+      title = "MEAL COLLECTION";
+
+      const preference =
+        String(data.foodPreference || "").trim();
+
+      mainText = preference
         ? preference.toUpperCase()
         : "FOOD PREFERENCE NOT RECORDED";
 
-    document.getElementById("food-status").textContent =
-      "✓ Meal collection recorded successfully";
+      status = "✓ Meal collection recorded successfully";
+    }
+
+    if (action === "DRINK") {
+      title = "BEVERAGE COLLECTION";
+      mainText = "DRINK COLLECTED";
+      status = "✓ Beverage collection recorded successfully";
+    }
+
+    document.getElementById(
+      "scan-panel-title"
+    ).textContent = title;
+
+    document.getElementById(
+      "scan-panel-symbol"
+    ).textContent = "✓";
+
+    document.getElementById(
+      "scan-panel-main"
+    ).textContent = mainText;
+
+    document.getElementById(
+      "scan-panel-name"
+    ).textContent = data.name || "Participant";
+
+    document.getElementById(
+      "scan-panel-id"
+    ).textContent = data.participantID || "";
+
+    document.getElementById(
+      "scan-panel-status"
+    ).textContent = status;
 
     panel.style.display = "block";
   }
 
-  function showMealError(message) {
+  // =====================================
+  // LARGE ERROR PANEL
+  // =====================================
+
+  function showErrorPanel(message, action) {
     const panel =
-      document.getElementById("food-panel");
+      document.getElementById("scan-panel");
 
     panel.classList.add("error");
 
-    document.getElementById("food-name").textContent =
-      "MEAL NOT RECORDED";
+    let title = "";
+    let mainText = "";
 
-    document.getElementById("food-preference").textContent =
-      "DO NOT DISTRIBUTE";
+    if (action === "ATTENDANCE") {
+      title = "ENTRANCE ATTENDANCE";
+      mainText = "ENTRY NOT RECORDED";
+    }
 
-    document.getElementById("food-status").textContent =
-      message;
+    if (action === "MEAL") {
+      title = "MEAL COLLECTION";
+      mainText = "DO NOT DISTRIBUTE";
+    }
+
+    if (action === "DRINK") {
+      title = "BEVERAGE COLLECTION";
+      mainText = "DO NOT DISTRIBUTE";
+    }
+
+    document.getElementById(
+      "scan-panel-title"
+    ).textContent = title;
+
+    document.getElementById(
+      "scan-panel-symbol"
+    ).textContent = "✕";
+
+    document.getElementById(
+      "scan-panel-main"
+    ).textContent = mainText;
+
+    document.getElementById(
+      "scan-panel-name"
+    ).textContent = "";
+
+    document.getElementById(
+      "scan-panel-id"
+    ).textContent = "";
+
+    document.getElementById(
+      "scan-panel-status"
+    ).textContent = message;
 
     panel.style.display = "block";
   }
@@ -445,18 +579,24 @@
   function handleCredential(response) {
     idToken = response.credential;
 
-    document.getElementById("loginStatus").textContent =
+    document.getElementById(
+      "loginStatus"
+    ).textContent =
       "Google sign-in received. Ready to scan.";
 
-    document.getElementById("start").disabled = false;
+    document.getElementById(
+      "start"
+    ).disabled = false;
 
-    document.getElementById("refresh-stats").disabled = false;
+    document.getElementById(
+      "refresh-stats"
+    ).disabled = false;
 
     showResult(
       "Choose an action and start scanning."
     );
 
-    clearFoodPanel();
+    clearScanPanel();
 
     refreshStatistics();
   }
@@ -499,7 +639,9 @@
 
     statsBusy = true;
 
-    document.getElementById("refresh-stats").disabled = true;
+    document.getElementById(
+      "refresh-stats"
+    ).disabled = true;
 
     setStatsMessage("Loading statistics...");
 
@@ -557,8 +699,9 @@
     } finally {
       statsBusy = false;
 
-      document.getElementById("refresh-stats").disabled =
-        !idToken;
+      document.getElementById(
+        "refresh-stats"
+      ).disabled = !idToken;
     }
   }
 
@@ -595,24 +738,27 @@
           const action =
             document.getElementById("action").value;
 
-          const key = action + ":" + decodedText;
+          const token = decodedText.trim();
+
+          if (!token) return;
+
+          const key = action + ":" + token;
 
           const now = Date.now();
 
-          // Never reprocess a successful scan
-          // for the same action in this page session.
+          // Ignore repeated readings of
+          // successfully processed tickets.
           if (successfulScans.has(key)) {
             return;
           }
 
-          // Don't submit another scan while
-          // the previous request is running.
+          // Only process one ticket at a time.
           if (busy) {
             return;
           }
 
-          // Suppress rapid retries of the
-          // same failed QR code.
+          // Prevent a rejected QR code from
+          // triggering warnings continuously.
           if (
             key === lastAttemptKey &&
             now - lastAttemptTime < RETRY_DELAY_MS
@@ -623,13 +769,15 @@
           lastAttemptKey = key;
           lastAttemptTime = now;
 
-          processToken(decodedText, action);
+          processToken(token, action);
         },
 
         () => {}
       );
 
-      document.getElementById("start").disabled = true;
+      document.getElementById(
+        "start"
+      ).disabled = true;
 
       showResult(
         "Camera ready. Scan a ticket."
@@ -638,7 +786,9 @@
     } catch (error) {
       scanner = null;
 
-      document.getElementById("start").disabled = false;
+      document.getElementById(
+        "start"
+      ).disabled = false;
 
       showResult(
         "Camera error: " + error.message
@@ -655,10 +805,13 @@
     try {
       await current.stop();
       await current.clear();
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+    }
 
-    document.getElementById("start").disabled =
-      !idToken;
+    document.getElementById(
+      "start"
+    ).disabled = !idToken;
   }
 
   // =====================================
@@ -669,7 +822,12 @@
     const token =
       document.getElementById("manual").value.trim();
 
-    if (!token) return;
+    if (!token) {
+      showResult(
+        "Please enter a ticket token."
+      );
+      return;
+    }
 
     const action =
       document.getElementById("action").value;
@@ -693,14 +851,15 @@
 
     const key = action + ":" + ticketToken;
 
-    // Keep an earlier successful result visible.
+    // Do not replace an earlier success
+    // with a duplicate error.
     if (successfulScans.has(key)) {
       return;
     }
 
     busy = true;
 
-    clearFoodPanel();
+    clearScanPanel();
 
     showResult(
       "Verifying ticket..."
@@ -712,9 +871,10 @@
         action
       });
 
-      // Mark the scan successful so the
-      // same QR cannot overwrite the result.
+      // Remember this successful scan.
       successfulScans.add(key);
+
+      showSuccessPanel(data, action);
 
       showResult(
         "SUCCESS\n" +
@@ -725,24 +885,22 @@
         data.message
       );
 
-      // Only show food preference for meals.
-      if (action === "MEAL") {
-        showFoodPreference(data);
-      }
-
-      document.getElementById("manual").value = "";
+      document.getElementById(
+        "manual"
+      ).value = "";
 
       refreshStatistics();
 
     } catch (error) {
+      showErrorPanel(
+        error.message,
+        action
+      );
+
       showResult(
         "NOT RECORDED\n" +
         error.message
       );
-
-      if (action === "MEAL") {
-        showMealError(error.message);
-      }
 
     } finally {
       busy = false;
